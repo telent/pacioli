@@ -23,28 +23,39 @@ class Transaction < Sequel::Model
     super
     @splits=[]
   end
-  def self.post(&blok)
-    tx=Transaction.new
+  def self.post(*args,&blok)
+    tx=Transaction.new(*args)
     tx.instance_eval(&blok)
     uk=tx.find_unknown
     if uk then
-      uk[1]=tx.balance
+      uk[0]=-tx.balance
     end
     raise UnbalancedTransactionError unless tx.balance==0
+    tx.write_splits_and_save
   end
+  def write_splits_and_save
+    self.db.transaction do
+      @splits.each do |split|
+        value = split[0]
+        account = Account.root.find(split[1])
+        Split.create :account_id=>account.id, :value=> value
+      end
+      self.save
+    end
+  end
+
   def cr(v,*ac)
-    @splits << [:c,v, ac]
+    @splits << [v, ac]
   end
   def dr(v,*ac)
-    @splits << [:d,v, ac]
+    @splits << [(v==:balance) ? v : -v, ac]
   end
   def find_unknown
-    @splits.find {|s| (s[1]==:balance) }
+    @splits.find {|s| (s[0]==:balance) }
   end
   def balance
-    @splits.select {|s| s[1].is_a?(Integer) }.inject(0) {|sum,split|
-      sum+=(split[0]==:c) ? split[1] : -split[1]
+    @splits.select {|s| s[0].is_a?(Integer) }.inject(0) {|sum,split|
+      sum+=split[0]
     }
   end
 end
-

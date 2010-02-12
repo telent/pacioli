@@ -5,6 +5,19 @@ class Account  <Sequel::Model
   def self.root
     Account.filter(:parent_id=>nil).first
   end
+  def name
+    super.to_sym
+  end
+  def children
+    Hash[Account.filter(:parent_id=>self.id).map{|r|
+           [r[:name].to_sym,r]
+         }]
+  end
+  def find(names)
+    k=self.children[names.shift]
+    if names.empty? then k else k.find(names) end
+  end
+    
   # XXX how do we make the #new method private?
   def make_child(args)
     Account.create(args.merge! Hash[:parent_id => self.id ])
@@ -32,6 +45,7 @@ class Transaction < Sequel::Model
     end
     raise UnbalancedTransactionError unless tx.balance==0
     tx.write_splits_and_save
+    # returns tx
   end
   def write_splits_and_save
     self.db.transaction do

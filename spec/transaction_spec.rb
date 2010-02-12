@@ -9,12 +9,17 @@ describe Transaction do
   it "should create balanced transaction" do
     ac1=Account.root.make_child :name=>:from
     ac2=Account.root.make_child :name=>:to
+    tx=nil
     lambda {
-      Transaction.post do 
+      tx=Transaction.post :description=>"test tx", :date=>Time.now do 
         cr 10,:from
         dr 10,:to
       end
     }.should_not raise_error UnbalancedTransactionError
+    tx.description.should == "test tx"
+    now=Time.now
+    tx.date.should <= now
+    tx.date.should > now-30 # something wrong if the creation takes >30 s
   end
   it "should refuse unbalanced transaction" do
     ac1=Account.root.make_child :name=>:from
@@ -35,4 +40,3 @@ describe Transaction do
     }.should_not raise_error UnbalancedTransactionError
   end
 end
-

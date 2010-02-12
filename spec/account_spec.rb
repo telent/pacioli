@@ -11,7 +11,7 @@ describe Account do
   end
   it "should be named when a name is given" do
     ac=Account.root.make_child :name=>:test
-    ac.name.should == 'test'
+    ac.name.should == :test
   end
   it "should increase balance when debited" do
     ac=Account.root.make_child :name=>:test

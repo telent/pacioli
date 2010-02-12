@@ -1,5 +1,5 @@
-require 'account'
-require 'pp'
+require 'support/db'
+require 'pacioli'
 
 describe Account do
   it "should find root account" do

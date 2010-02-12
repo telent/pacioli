@@ -1,5 +1,5 @@
-require 'account'
-require 'pp'
+require 'support/db'
+require 'pacioli'
 
 describe Transaction do
   it "should exist after creating" do

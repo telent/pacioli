@@ -1,5 +1,5 @@
 require 'sequel'
-DB=Sequel.postgres
+# DB=Sequel.postgres
 
 class Account  <Sequel::Model
   def self.root
@@ -10,7 +10,7 @@ class Account  <Sequel::Model
     Account.create(args.merge! Hash[:parent_id => self.id ])
   end
   def balance 
-    (Split.filter(:account_id=>self.id).sum(:value) or 0)
+    (Split.filter(:account_id=>self.id).sum(:value).to_i or 0)
   end
 end
 

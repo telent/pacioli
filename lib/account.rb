@@ -1,21 +1,21 @@
 require 'sequel'
-# DB=Sequel.postgres
+require 'pp'
 
 class Account  <Sequel::Model
   def self.root
     Account.filter(:parent_id=>nil).first
   end
   def name
-    super.to_sym
+    x=super
+    /^[0-9]+$/ =~ x ? x.to_i : x.to_sym
   end
   def children
-    Hash[Account.filter(:parent_id=>self.id).map{|r|
-           [r[:name].to_sym,r]
-         }]
+    Account.filter(:parent_id=>self.id).all
   end
   def find(names)
-    k=self.children[names.shift]
-    if names.empty? then k else k.find(names) end
+    kidname=names.shift
+    kid=self.children.find { |x| kidname==x.name }
+    if names.empty? then kid else kid.find(names) end
   end
     
   # XXX how do we make the #new method private?
@@ -23,7 +23,8 @@ class Account  <Sequel::Model
     Account.create(args.merge! Hash[:parent_id => self.id ])
   end
   def balance 
-    (Split.filter(:account_id=>self.id).sum(:value).to_i or 0)
+    (Split.filter(:account_id=>self.id).sum(:value).to_i or 0) +
+      self.children.inject(0) { |s,c| s+=c.balance }
   end
 end
 
@@ -52,16 +53,16 @@ class Transaction < Sequel::Model
       @splits.each do |split|
         value = split[0]
         account = Account.root.find(split[1])
-        Split.create :account_id=>account.id, :value=> value
+        Split.create :account_id=>account[:id], :value=> value
       end
       self.save
     end
   end
 
-  def cr(v,*ac)
+  def dr(v,*ac)
     @splits << [v, ac]
   end
-  def dr(v,*ac)
+  def cr(v,*ac)
     @splits << [(v==:balance) ? v : -v, ac]
   end
   def find_unknown

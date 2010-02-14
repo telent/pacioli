@@ -17,11 +17,10 @@ task :unmigrate => [] do
   puts `sequel -M 0  -m migrations/ #{PACIOLI_DB}`
 end
 
-task :spec => [:migrate,:run_spec] 
+task :spec => [:migrate,:run_spec]
 
 Spec::Rake::SpecTask.new(:run_spec) do |t|
   t.spec_files = Dir.glob('spec/**/*_spec.rb')
   t.spec_opts << '--format specdoc'
   t.rcov = true
 end
-
